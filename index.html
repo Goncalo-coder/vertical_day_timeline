@@ -3,136 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vertical Timeline - Simple</title>
+    <title>Vertical Day Timeline</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            padding: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: white;
+            padding: 20px;
         }
-        .controls { margin-bottom: 30px; }
-        .controls input, .controls select, .controls button {
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input, select, button {
+            width: 100%;
             padding: 8px;
-            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
         }
-        .timeline-container {
+
+        input[type="color"] {
+            height: 38px;
+            cursor: pointer;
+        }
+
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0051D5;
+        }
+
+        .timeline-display {
             display: flex;
             gap: 20px;
+            align-items: flex-start;
             justify-content: center;
+            margin: 40px 0;
         }
-        .labels { display: flex; flex-direction: column; }
-        .label {
-            height: 40px;
+
+        .scale-column {
             display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 15px;
-            font-size: 12px;
-            font-weight: 600;
+            flex-direction: column;
         }
-        .bar-container { position: relative; }
-        .bar {
-            width: 120px;
-            background: #007AFF;
-            border-radius: 60px;
+
+        .scale-unit {
+            text-align: right;
+            padding-right: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding-top: 0;
+        }
+
+        .bar-container {
             position: relative;
         }
+
+        .timeline-bar {
+            width: 100px;
+            background: #007AFF;
+            border-radius: 50px;
+            position: relative;
+        }
+
         .bar-title {
             position: absolute;
-            top: 25px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             color: white;
-            font-weight: bold;
-            font-size: 15px;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 20;
+            white-space: nowrap;
         }
-        .sep {
+
+        .timeline-separator {
             position: absolute;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 1px;
             background: white;
+            z-index: 5;
         }
-        .now {
+
+        .now-indicator {
             position: absolute;
-            left: -50px;
-            right: -50px;
-            height: 3px;
-            background: red;
+            left: -40px;
+            right: -40px;
+            height: 2px;
+            background: #FF3B30;
+            box-shadow: 0 0 8px rgba(255,59,48,0.5);
+            z-index: 10;
             animation: blink 2s infinite;
         }
+
+        .now-label {
+            position: absolute;
+            right: -60px;
+            top: -10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #FF3B30;
+        }
+
         @keyframes blink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            50% { opacity: 0.4; }
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .share-section {
+            margin-top: 30px;
+        }
+
+        .share-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: monospace;
+            background: #f9f9f9;
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <input type="text" id="title" value="My Day" placeholder="Title">
-        <input type="number" id="start" value="8" min="0" max="23"> to
-        <input type="number" id="end" value="21" min="1" max="24">
-        <select id="interval">
-            <option value="30">30min</option>
-            <option value="60" selected>1h</option>
-            <option value="120">2h</option>
-        </select>
-        <button onclick="draw()">Generate</button>
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <div>
+                    <label>Title</label>
+                    <input type="text" id="title" value="My Day">
+                </div>
+                <div>
+                    <label>Start Hour</label>
+                    <input type="number" id="startHour" value="8" min="0" max="23">
+                </div>
+                <div>
+                    <label>End Hour</label>
+                    <input type="number" id="endHour" value="21" min="1" max="24">
+                </div>
+                <div>
+                    <label>Interval</label>
+                    <select id="interval">
+                        <option value="30">30 min</option>
+                        <option value="60" selected>1 hour</option>
+                        <option value="120">2 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <div>
+                    <label>Bar Color</label>
+                    <input type="color" id="barColor" value="#007AFF">
+                </div>
+                <div>
+                    <label>Separator Color</label>
+                    <input type="color" id="separatorColor" value="#ffffff">
+                </div>
+                <div>
+                    <label>Now Color</label>
+                    <input type="color" id="nowColor" value="#FF3B30">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="generate()">Generate</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="output"></div>
     </div>
-    <div id="output"></div>
-    
+
     <script>
-        function draw() {
+        function generate() {
             const title = document.getElementById('title').value;
-            const start = parseInt(document.getElementById('start').value);
-            const end = parseInt(document.getElementById('end').value);
-            const interval = parseInt(document.getElementById('interval').value);
+            const startHour = parseInt(document.getElementById('startHour').value);
+            const endHour = parseInt(document.getElementById('endHour').value);
+            const intervalMin = parseInt(document.getElementById('interval').value);
+            const barColor = document.getElementById('barColor').value;
+            const sepColor = document.getElementById('separatorColor').value;
+            const nowColor = document.getElementById('nowColor').value;
+
+            if (startHour >= endHour) {
+                alert('End hour must be after start hour');
+                return;
+            }
+
+            const totalHours = endHour - startHour;
+            const totalMinutes = totalHours * 60;
+            const PX_PER_HOUR = 40;
             
-            if (start >= end) { alert('End must be after start'); return; }
+            // Bar height = total hours × pixels per hour
+            const barHeight = totalHours * PX_PER_HOUR;
             
-            const totalMin = (end - start) * 60;
-            const numHours = totalMin / 60;
-            const barHeight = numHours * 40;
+            // Generate time labels at each interval point including START and END
+            let scaleHtml = '';
+            let currentMin = 0;
             
-            // Labels at each hour/half-hour mark
-            let labelsHTML = '';
-            for (let min = 0; min <= totalMin; min += interval) {
-                const h = start + Math.floor(min / 60);
-                const m = min % 60;
-                if (h > end) break;
-                if (h === end && m > 0) break;
+            while (currentMin <= totalMinutes) {
+                const h = startHour + Math.floor(currentMin / 60);
+                const m = currentMin % 60;
                 
-                const hDisplay = h === 0 ? 12 : h > 12 ? h - 12 : h;
-                const period = h < 12 ? 'AM' : 'PM';
-                labelsHTML += `<div class="label">${hDisplay}:${m.toString().padStart(2,'0')} ${period}</div>`;
+                // Stop if we've passed end hour
+                if (h > endHour || (h === endHour && m > 0)) break;
+                
+                // Each label gets equal height space
+                const labelHeight = (intervalMin / 60) * PX_PER_HOUR;
+                scaleHtml += `<div class="scale-unit" style="height: ${labelHeight}px; line-height: ${labelHeight}px;">${formatTime(h, m)}</div>`;
+                
+                currentMin += intervalMin;
             }
+
+            // Generate separators at each interval boundary AFTER the first
+            let separatorsHtml = '';
+            currentMin = intervalMin; // Start after first interval
             
-            // Separators at each interval EXCEPT first (start)
-            let sepsHTML = '';
-            for (let min = interval; min <= totalMin; min += interval) {
-                const topPx = (min / 60) * 40;
-                sepsHTML += `<div class="sep" style="top: ${topPx}px"></div>`;
+            while (currentMin <= totalMinutes) {
+                // Position in pixels from top
+                const topPx = (currentMin / 60) * PX_PER_HOUR;
+                separatorsHtml += `<div class="timeline-separator" style="top: ${topPx}px; background: ${sepColor};"></div>`;
+                
+                currentMin += intervalMin;
             }
-            
-            // Now indicator
+
+            // Calculate NOW position
             const now = new Date();
-            const nowMin = (now.getHours() - start) * 60 + now.getMinutes();
-            const nowPx = (nowMin / 60) * 40;
-            
+            const nowHour = now.getHours();
+            const nowMin = now.getMinutes();
+            const nowMinutesFromStart = (nowHour - startHour) * 60 + nowMin;
+            const nowTopPx = Math.max(0, Math.min(barHeight, (nowMinutesFromStart / 60) * PX_PER_HOUR));
+
+            // Calculate stats
+            const timeLeftMin = Math.max(0, totalMinutes - nowMinutesFromStart);
+            const percentComplete = Math.round(Math.min(100, (nowMinutesFromStart / totalMinutes) * 100));
+
             document.getElementById('output').innerHTML = `
-                <div class="timeline-container">
-                    <div class="labels">${labelsHTML}</div>
+                <div class="timeline-display">
+                    <div class="scale-column">
+                        ${scaleHtml}
+                    </div>
                     <div class="bar-container">
-                        <div class="bar" style="height: ${barHeight}px">
+                        <div class="timeline-bar" style="height: ${barHeight}px; background: ${barColor};">
                             <div class="bar-title">${title}</div>
-                            ${sepsHTML}
+                            ${separatorsHtml}
                         </div>
-                        <div class="now" style="top: ${nowPx}px"></div>
+                        <div class="now-indicator" style="top: ${nowTopPx}px; background: ${nowColor}; box-shadow: 0 0 8px ${nowColor}88;">
+                            <div class="now-label" style="color: ${nowColor};">Now</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">${totalHours}h</div>
+                        <div class="stat-label">Total Hours</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${percentComplete}%</div>
+                        <div class="stat-label">Complete</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${formatTimeLeft(timeLeftMin)}</div>
+                        <div class="stat-label">Time Left</div>
                     </div>
                 </div>
             `;
         }
-        draw();
+
+        function formatTime(h, m) {
+            const period = h < 12 ? 'AM' : 'PM';
+            const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+            const displayM = m.toString().padStart(2, '0');
+            return `${displayH}:${displayM} ${period}`;
+        }
+
+        function formatTimeLeft(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = Math.round(minutes % 60);
+            if (h > 0 && m > 0) return `${h}h ${m}min`;
+            if (h > 0) return `${h}h`;
+            return `${m}min`;
+        }
+
+        // Generate on load
+        generate();
+
+        // Update every minute
+        setInterval(generate, 60000);
     </script>
 </body>
 </html>
