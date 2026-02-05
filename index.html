@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertical Timeline - Simple</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px;
+            background: white;
+        }
+        .controls { margin-bottom: 30px; }
+        .controls input, .controls select, .controls button {
+            padding: 8px;
+            margin: 5px;
+        }
+        .timeline-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .labels { display: flex; flex-direction: column; }
+        .label {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .bar-container { position: relative; }
+        .bar {
+            width: 120px;
+            background: #007AFF;
+            border-radius: 60px;
+            position: relative;
+        }
+        .bar-title {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .sep {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: white;
+        }
+        .now {
+            position: absolute;
+            left: -50px;
+            right: -50px;
+            height: 3px;
+            background: red;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <input type="text" id="title" value="My Day" placeholder="Title">
+        <input type="number" id="start" value="8" min="0" max="23"> to
+        <input type="number" id="end" value="21" min="1" max="24">
+        <select id="interval">
+            <option value="30">30min</option>
+            <option value="60" selected>1h</option>
+            <option value="120">2h</option>
+        </select>
+        <button onclick="draw()">Generate</button>
+    </div>
+    <div id="output"></div>
+    
+    <script>
+        function draw() {
+            const title = document.getElementById('title').value;
+            const start = parseInt(document.getElementById('start').value);
+            const end = parseInt(document.getElementById('end').value);
+            const interval = parseInt(document.getElementById('interval').value);
+            
+            if (start >= end) { alert('End must be after start'); return; }
+            
+            const totalMin = (end - start) * 60;
+            const numHours = totalMin / 60;
+            const barHeight = numHours * 40;
+            
+            // Labels at each hour/half-hour mark
+            let labelsHTML = '';
+            for (let min = 0; min <= totalMin; min += interval) {
+                const h = start + Math.floor(min / 60);
+                const m = min % 60;
+                if (h > end) break;
+                if (h === end && m > 0) break;
+                
+                const hDisplay = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                const period = h < 12 ? 'AM' : 'PM';
+                labelsHTML += `<div class="label">${hDisplay}:${m.toString().padStart(2,'0')} ${period}</div>`;
+            }
+            
+            // Separators at each interval EXCEPT first (start)
+            let sepsHTML = '';
+            for (let min = interval; min <= totalMin; min += interval) {
+                const topPx = (min / 60) * 40;
+                sepsHTML += `<div class="sep" style="top: ${topPx}px"></div>`;
+            }
+            
+            // Now indicator
+            const now = new Date();
+            const nowMin = (now.getHours() - start) * 60 + now.getMinutes();
+            const nowPx = (nowMin / 60) * 40;
+            
+            document.getElementById('output').innerHTML = `
+                <div class="timeline-container">
+                    <div class="labels">${labelsHTML}</div>
+                    <div class="bar-container">
+                        <div class="bar" style="height: ${barHeight}px">
+                            <div class="bar-title">${title}</div>
+                            ${sepsHTML}
+                        </div>
+                        <div class="now" style="top: ${nowPx}px"></div>
+                    </div>
+                </div>
+            `;
+        }
+        draw();
+    </script>
+</body>
+</html>
