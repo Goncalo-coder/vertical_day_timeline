@@ -14,7 +14,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: white;
-            padding: 20px;
+            padding: 10px;
         }
 
         .container {
@@ -23,14 +23,14 @@
         }
 
         .controls {
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
 
         .control-group {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
         label {
@@ -68,63 +68,73 @@
 
         .timeline-display {
             display: flex;
-            gap: 20px;
-            align-items: flex-start;
+            gap: 15px;
             justify-content: center;
-            margin: 40px 0;
+            margin: 20px 0;
+            transition: transform 0.3s ease;
         }
 
-        .scale-column {
+        .timeline-display.size-small {
+            transform: scale(0.75);
+            transform-origin: top center;
+        }
+
+        .timeline-display.size-medium {
+            transform: scale(1);
+        }
+
+        .timeline-display.size-large {
+            transform: scale(1.25);
+            transform-origin: top center;
+        }
+
+        .scale-labels {
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
         }
 
-        .scale-unit {
+        .scale-label {
             text-align: right;
             padding-right: 12px;
             font-size: 11px;
             font-weight: 600;
             color: #333;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-end;
-            padding-top: 0;
         }
 
-        .bar-container {
+        .bar-wrapper {
             position: relative;
         }
 
         .timeline-bar {
-            width: 100px;
+            width: 60px;
             background: #007AFF;
-            border-radius: 50px;
+            border-radius: 30px;
             position: relative;
         }
 
         .bar-title {
             position: absolute;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
             color: white;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 12px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             z-index: 20;
             white-space: nowrap;
         }
 
-        .timeline-separator {
+        .hour-line {
             position: absolute;
-            left: 0;
-            right: 0;
+            left: -15px;
+            right: -15px;
             height: 1px;
-            background: white;
             z-index: 5;
         }
 
-        .now-indicator {
+        .now-line {
             position: absolute;
             left: -40px;
             right: -40px;
@@ -152,9 +162,9 @@
         .stats {
             display: flex;
             justify-content: center;
-            gap: 40px;
-            margin-top: 30px;
-            padding-top: 20px;
+            gap: 25px;
+            margin-top: 15px;
+            padding-top: 15px;
             border-top: 1px solid #eee;
         }
 
@@ -163,29 +173,15 @@
         }
 
         .stat-value {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 700;
             color: #333;
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 10px;
             color: #999;
-            margin-top: 5px;
-        }
-
-        .share-section {
-            margin-top: 30px;
-        }
-
-        .share-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 11px;
-            font-family: monospace;
-            background: #f9f9f9;
+            margin-top: 3px;
         }
     </style>
 </head>
@@ -213,24 +209,28 @@
                         <option value="120">2 hours</option>
                     </select>
                 </div>
-            </div>
-            <div class="control-group">
+                <div>
+                    <label>Size</label>
+                    <select id="size">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
                 <div>
                     <label>Bar Color</label>
                     <input type="color" id="barColor" value="#007AFF">
                 </div>
                 <div>
-                    <label>Separator Color</label>
-                    <input type="color" id="separatorColor" value="#ffffff">
+                    <label>Line Color</label>
+                    <input type="color" id="lineColor" value="#ffffff">
                 </div>
                 <div>
                     <label>Now Color</label>
                     <input type="color" id="nowColor" value="#FF3B30">
                 </div>
-                <div style="display: flex; align-items: flex-end;">
-                    <button onclick="generate()">Generate</button>
-                </div>
             </div>
+            <button onclick="generate()">Generate</button>
         </div>
 
         <div id="output"></div>
@@ -242,8 +242,9 @@
             const startHour = parseInt(document.getElementById('startHour').value);
             const endHour = parseInt(document.getElementById('endHour').value);
             const intervalMin = parseInt(document.getElementById('interval').value);
+            const size = document.getElementById('size').value;
             const barColor = document.getElementById('barColor').value;
-            const sepColor = document.getElementById('separatorColor').value;
+            const lineColor = document.getElementById('lineColor').value;
             const nowColor = document.getElementById('nowColor').value;
 
             if (startHour >= endHour) {
@@ -251,41 +252,29 @@
                 return;
             }
 
-            const totalHours = endHour - startHour;
-            const totalMinutes = totalHours * 60;
+            const totalMinutes = (endHour - startHour) * 60;
             const PX_PER_HOUR = 40;
             
-            // Bar height = total hours × pixels per hour
-            const barHeight = totalHours * PX_PER_HOUR;
-            
-            // Generate time labels at each interval point including START and END
-            let scaleHtml = '';
-            let currentMin = 0;
-            
-            while (currentMin <= totalMinutes) {
-                const h = startHour + Math.floor(currentMin / 60);
-                const m = currentMin % 60;
-                
-                // Stop if we've passed end hour
+            // Bar height based on total time
+            const barHeight = (totalMinutes / 60) * PX_PER_HOUR;
+
+            // Generate scale labels - one for each interval
+            let labelsHTML = '';
+            for (let min = 0; min <= totalMinutes; min += intervalMin) {
+                const h = startHour + Math.floor(min / 60);
+                const m = min % 60;
                 if (h > endHour || (h === endHour && m > 0)) break;
                 
-                // Each label gets equal height space
-                const labelHeight = (intervalMin / 60) * PX_PER_HOUR;
-                scaleHtml += `<div class="scale-unit" style="height: ${labelHeight}px; line-height: ${labelHeight}px;">${formatTime(h, m)}</div>`;
-                
-                currentMin += intervalMin;
+                labelsHTML += `<div class="scale-label">${formatTime(h, m)}</div>`;
             }
 
-            // Generate separators at each interval boundary AFTER the first
-            let separatorsHtml = '';
-            currentMin = intervalMin; // Start after first interval
-            
-            while (currentMin <= totalMinutes) {
-                // Position in pixels from top
-                const topPx = (currentMin / 60) * PX_PER_HOUR;
-                separatorsHtml += `<div class="timeline-separator" style="top: ${topPx}px; background: ${sepColor};"></div>`;
+            // Generate hour lines at each interval position
+            let linesHTML = '';
+            for (let min = 0; min <= totalMinutes; min += intervalMin) {
+                if (min === 0) continue; // Skip first line at top
                 
-                currentMin += intervalMin;
+                const topPx = (min / 60) * PX_PER_HOUR;
+                linesHTML += `<div class="hour-line" style="top: ${topPx}px; background: ${lineColor};"></div>`;
             }
 
             // Calculate NOW position
@@ -293,30 +282,30 @@
             const nowHour = now.getHours();
             const nowMin = now.getMinutes();
             const nowMinutesFromStart = (nowHour - startHour) * 60 + nowMin;
-            const nowTopPx = Math.max(0, Math.min(barHeight, (nowMinutesFromStart / 60) * PX_PER_HOUR));
+            const nowTopPx = (nowMinutesFromStart / 60) * PX_PER_HOUR;
 
             // Calculate stats
             const timeLeftMin = Math.max(0, totalMinutes - nowMinutesFromStart);
             const percentComplete = Math.round(Math.min(100, (nowMinutesFromStart / totalMinutes) * 100));
 
             document.getElementById('output').innerHTML = `
-                <div class="timeline-display">
-                    <div class="scale-column">
-                        ${scaleHtml}
+                <div class="timeline-display size-${size}">
+                    <div class="scale-labels" style="height: ${barHeight}px;">
+                        ${labelsHTML}
                     </div>
-                    <div class="bar-container">
+                    <div class="bar-wrapper">
                         <div class="timeline-bar" style="height: ${barHeight}px; background: ${barColor};">
                             <div class="bar-title">${title}</div>
-                            ${separatorsHtml}
+                            ${linesHTML}
                         </div>
-                        <div class="now-indicator" style="top: ${nowTopPx}px; background: ${nowColor}; box-shadow: 0 0 8px ${nowColor}88;">
+                        <div class="now-line" style="top: ${nowTopPx}px; background: ${nowColor}; box-shadow: 0 0 8px ${nowColor}88;">
                             <div class="now-label" style="color: ${nowColor};">Now</div>
                         </div>
                     </div>
                 </div>
                 <div class="stats">
                     <div class="stat">
-                        <div class="stat-value">${totalHours}h</div>
+                        <div class="stat-value">${endHour - startHour}h</div>
                         <div class="stat-label">Total Hours</div>
                     </div>
                     <div class="stat">
