@@ -18,20 +18,20 @@
         }
 
         .container {
-            max-width: 140px;
+            max-width: 160px;
             margin: 0 auto;
         }
 
         .container.width-thin {
-            max-width: 120px;
+            max-width: 140px;
         }
 
         .container.width-thinner {
-            max-width: 100px;
+            max-width: 120px;
         }
 
         .container.width-thinnest {
-            max-width: 80px;
+            max-width: 100px;
         }
 
         .controls {
@@ -46,7 +46,7 @@
         }
 
         label {
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 600;
             display: block;
             margin-bottom: 2px;
@@ -55,14 +55,14 @@
 
         input, select, button {
             width: 100%;
-            padding: 2px 3px;
+            padding: 3px 4px;
             border: 1px solid #ddd;
             border-radius: 3px;
-            font-size: 9px;
+            font-size: 10px;
         }
 
         input[type="color"] {
-            height: 20px;
+            height: 22px;
             cursor: pointer;
             padding: 0;
         }
@@ -190,7 +190,7 @@
         .stats {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
@@ -201,13 +201,13 @@
         }
 
         .stat-value {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             color: #333;
         }
 
         .stat-label {
-            font-size: 8px;
+            font-size: 9px;
             color: #999;
             margin-top: 2px;
         }
@@ -248,8 +248,8 @@
                 <div>
                     <label>Page Width</label>
                     <select id="pageWidth">
-                        <option value="normal">Normal</option>
-                        <option value="thin" selected>Thin</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="thin">Thin</option>
                         <option value="thinner">Thinner</option>
                         <option value="thinnest">Thinnest</option>
                     </select>
@@ -327,44 +327,30 @@
             let barBackground = barColor;
             if (highlightHours.trim()) {
                 const ranges = highlightHours.split(',');
-                const gradientStops = [];
+                const gradientParts = [`${barColor} 0%`];
                 
-                // Create gradient stops for each hour segment
-                for (let h = startHour; h <= endHour; h++) {
-                    const minFromStart = (h - startHour) * 60;
-                    const percent = (minFromStart / totalMinutes) * 100;
-                    
-                    // Check if this hour is in any highlight range
-                    let isHighlighted = false;
-                    ranges.forEach(range => {
-                        const parts = range.trim().split('-');
-                        if (parts.length === 2) {
-                            const startH = parseInt(parts[0]);
-                            const endH = parseInt(parts[1]);
-                            if (h >= startH && h < endH) {
-                                isHighlighted = true;
-                            }
-                        }
-                    });
-                    
-                    const color = isHighlighted ? highlightColor : barColor;
-                    if (gradientStops.length === 0 || gradientStops[gradientStops.length - 1].color !== color) {
-                        gradientStops.push({ percent, color });
-                    }
-                }
-                
-                // Build gradient string
-                if (gradientStops.length > 1) {
-                    const gradientParts = [];
-                    for (let i = 0; i < gradientStops.length; i++) {
-                        const stop = gradientStops[i];
-                        gradientParts.push(`${stop.color} ${stop.percent}%`);
-                        if (i < gradientStops.length - 1) {
-                            gradientParts.push(`${stop.color} ${gradientStops[i + 1].percent}%`);
+                // For each range, add color stops
+                ranges.forEach(range => {
+                    const parts = range.trim().split('-');
+                    if (parts.length === 2) {
+                        const startH = parseInt(parts[0]);
+                        const endH = parseInt(parts[1]);
+                        
+                        if (startH >= startHour && endH <= endHour) {
+                            const startPercent = ((startH - startHour) / (endHour - startHour)) * 100;
+                            const endPercent = ((endH - startHour) / (endHour - startHour)) * 100;
+                            
+                            // Add stops for this highlight range
+                            gradientParts.push(`${barColor} ${startPercent}%`);
+                            gradientParts.push(`${highlightColor} ${startPercent}%`);
+                            gradientParts.push(`${highlightColor} ${endPercent}%`);
+                            gradientParts.push(`${barColor} ${endPercent}%`);
                         }
                     }
-                    barBackground = `linear-gradient(to bottom, ${gradientParts.join(', ')})`;
-                }
+                });
+                
+                gradientParts.push(`${barColor} 100%`);
+                barBackground = `linear-gradient(to bottom, ${gradientParts.join(', ')})`;
             }
 
             // Generate hour lines at each interval position
