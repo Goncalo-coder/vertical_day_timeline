@@ -22,8 +22,20 @@
             margin: 0 auto;
         }
 
+        .container.width-thin {
+            max-width: 300px;
+        }
+
+        .container.width-thinner {
+            max-width: 200px;
+        }
+
+        .container.width-thinnest {
+            max-width: 150px;
+        }
+
         .controls {
-            margin-bottom: 15px;
+            margin-bottom: 30px;
         }
 
         .control-group {
@@ -43,14 +55,14 @@
 
         input, select, button {
             width: 100%;
-            padding: 8px;
+            padding: 6px;
             border: 1px solid #ddd;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         input[type="color"] {
-            height: 38px;
+            height: 32px;
             cursor: pointer;
         }
 
@@ -96,8 +108,8 @@
 
         .scale-label {
             text-align: right;
-            padding-right: 12px;
-            font-size: 11px;
+            padding-right: 8px;
+            font-size: 15px;
             font-weight: 600;
             color: #333;
         }
@@ -145,13 +157,24 @@
             animation: blink 2s infinite;
         }
 
+        .bar-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 3;
+            border-radius: 0 0 30px 30px;
+        }
+
         .now-label {
             position: absolute;
-            right: -60px;
-            top: -10px;
-            font-size: 11px;
-            font-weight: 600;
+            right: -45px;
+            top: -8px;
+            font-size: 15px;
+            font-weight: 700;
             color: #FF3B30;
+            animation: blink 2s infinite;
         }
 
         @keyframes blink {
@@ -163,9 +186,9 @@
             display: flex;
             justify-content: center;
             gap: 25px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
         }
 
         .stat {
@@ -218,6 +241,15 @@
                     </select>
                 </div>
                 <div>
+                    <label>Page Width</label>
+                    <select id="pageWidth">
+                        <option value="normal" selected>Normal</option>
+                        <option value="thin">Thin</option>
+                        <option value="thinner">Thinner</option>
+                        <option value="thinnest">Thinnest</option>
+                    </select>
+                </div>
+                <div>
                     <label>Bar Color</label>
                     <input type="color" id="barColor" value="#007AFF">
                 </div>
@@ -243,9 +275,17 @@
             const endHour = parseInt(document.getElementById('endHour').value);
             const intervalMin = parseInt(document.getElementById('interval').value);
             const size = document.getElementById('size').value;
+            const pageWidth = document.getElementById('pageWidth').value;
             const barColor = document.getElementById('barColor').value;
             const lineColor = document.getElementById('lineColor').value;
             const nowColor = document.getElementById('nowColor').value;
+
+            // Apply page width to container
+            const container = document.querySelector('.container');
+            container.className = 'container';
+            if (pageWidth !== 'normal') {
+                container.classList.add(`width-${pageWidth}`);
+            }
 
             if (startHour >= endHour) {
                 alert('End hour must be after start hour');
@@ -286,9 +326,24 @@
 
             // Calculate stats
             const timeLeftMin = Math.max(0, totalMinutes - nowMinutesFromStart);
-            const percentComplete = Math.round(Math.min(100, (nowMinutesFromStart / totalMinutes) * 100));
+            const hoursSpentMin = Math.max(0, nowMinutesFromStart);
+            const hoursSpent = formatTimeLeft(hoursSpentMin);
 
             document.getElementById('output').innerHTML = `
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">${endHour - startHour}h</div>
+                        <div class="stat-label">Total Hours</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${hoursSpent}</div>
+                        <div class="stat-label">Hours Spent</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${formatTimeLeft(timeLeftMin)}</div>
+                        <div class="stat-label">Time Left</div>
+                    </div>
+                </div>
                 <div class="timeline-display size-${size}">
                     <div class="scale-labels" style="height: ${barHeight}px;">
                         ${labelsHTML}
@@ -296,6 +351,7 @@
                     <div class="bar-wrapper">
                         <div class="timeline-bar" style="height: ${barHeight}px; background: ${barColor};">
                             <div class="bar-title">${title}</div>
+                            <div class="bar-overlay" style="height: ${barHeight - nowTopPx}px;"></div>
                             ${linesHTML}
                         </div>
                         <div class="now-line" style="top: ${nowTopPx}px; background: ${nowColor}; box-shadow: 0 0 8px ${nowColor}88;">
@@ -303,28 +359,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-value">${endHour - startHour}h</div>
-                        <div class="stat-label">Total Hours</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">${percentComplete}%</div>
-                        <div class="stat-label">Complete</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">${formatTimeLeft(timeLeftMin)}</div>
-                        <div class="stat-label">Time Left</div>
-                    </div>
-                </div>
             `;
         }
 
         function formatTime(h, m) {
-            const period = h < 12 ? 'AM' : 'PM';
-            const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-            const displayM = m.toString().padStart(2, '0');
-            return `${displayH}:${displayM} ${period}`;
+            // Always show 24-hour format: 8h, 9h, 13h, 20h, etc.
+            if (m === 0) {
+                return `${h}h`;
+            } else {
+                // If there are minutes, show as: 8h30, 13h45, etc.
+                const displayM = m.toString().padStart(2, '0');
+                return `${h}h${displayM}`;
+            }
         }
 
         function formatTimeLeft(minutes) {
