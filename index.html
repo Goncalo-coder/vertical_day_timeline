@@ -14,16 +14,16 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: white;
-            padding: 10px;
+            padding: 5px;
         }
 
         .container {
-            max-width: 400px;
+            max-width: 350px;
             margin: 0 auto;
         }
 
         .container.width-thin {
-            max-width: 300px;
+            max-width: 280px;
         }
 
         .container.width-thinner {
@@ -35,35 +35,36 @@
         }
 
         .controls {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .control-group {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 6px;
+            margin-bottom: 6px;
         }
 
         label {
-            font-size: 11px;
+            font-size: 9px;
             font-weight: 600;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             color: #333;
         }
 
         input, select, button {
             width: 100%;
-            padding: 6px;
+            padding: 4px;
             border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 4px;
+            font-size: 11px;
         }
 
         input[type="color"] {
-            height: 32px;
+            height: 28px;
             cursor: pointer;
+            padding: 2px;
         }
 
         button {
@@ -185,9 +186,9 @@
         .stats {
             display: flex;
             justify-content: center;
-            gap: 25px;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
+            gap: 15px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
 
@@ -196,15 +197,15 @@
         }
 
         .stat-value {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
             color: #333;
         }
 
         .stat-label {
-            font-size: 10px;
+            font-size: 9px;
             color: #999;
-            margin-top: 3px;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -261,6 +262,14 @@
                     <label>Now Color</label>
                     <input type="color" id="nowColor" value="#FF3B30">
                 </div>
+                <div>
+                    <label>Highlight Color</label>
+                    <input type="color" id="highlightColor" value="#FFD700">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Highlight Hours (e.g., 9-11,14-16)</label>
+                    <input type="text" id="highlightHours" placeholder="9-11,14-16">
+                </div>
             </div>
             <button onclick="generate()">Generate</button>
         </div>
@@ -279,6 +288,8 @@
             const barColor = document.getElementById('barColor').value;
             const lineColor = document.getElementById('lineColor').value;
             const nowColor = document.getElementById('nowColor').value;
+            const highlightColor = document.getElementById('highlightColor').value;
+            const highlightHours = document.getElementById('highlightHours').value;
 
             // Apply page width to container
             const container = document.querySelector('.container');
@@ -306,6 +317,50 @@
                 if (h > endHour || (h === endHour && m > 0)) break;
                 
                 labelsHTML += `<div class="scale-label">${formatTime(h, m)}</div>`;
+            }
+
+            // Parse highlight hours and create gradient stops
+            let barBackground = barColor;
+            if (highlightHours.trim()) {
+                const ranges = highlightHours.split(',');
+                const gradientStops = [];
+                
+                // Create gradient stops for each hour segment
+                for (let h = startHour; h <= endHour; h++) {
+                    const minFromStart = (h - startHour) * 60;
+                    const percent = (minFromStart / totalMinutes) * 100;
+                    
+                    // Check if this hour is in any highlight range
+                    let isHighlighted = false;
+                    ranges.forEach(range => {
+                        const parts = range.trim().split('-');
+                        if (parts.length === 2) {
+                            const startH = parseInt(parts[0]);
+                            const endH = parseInt(parts[1]);
+                            if (h >= startH && h < endH) {
+                                isHighlighted = true;
+                            }
+                        }
+                    });
+                    
+                    const color = isHighlighted ? highlightColor : barColor;
+                    if (gradientStops.length === 0 || gradientStops[gradientStops.length - 1].color !== color) {
+                        gradientStops.push({ percent, color });
+                    }
+                }
+                
+                // Build gradient string
+                if (gradientStops.length > 1) {
+                    const gradientParts = [];
+                    for (let i = 0; i < gradientStops.length; i++) {
+                        const stop = gradientStops[i];
+                        gradientParts.push(`${stop.color} ${stop.percent}%`);
+                        if (i < gradientStops.length - 1) {
+                            gradientParts.push(`${stop.color} ${gradientStops[i + 1].percent}%`);
+                        }
+                    }
+                    barBackground = `linear-gradient(to bottom, ${gradientParts.join(', ')})`;
+                }
             }
 
             // Generate hour lines at each interval position
@@ -349,7 +404,7 @@
                         ${labelsHTML}
                     </div>
                     <div class="bar-wrapper">
-                        <div class="timeline-bar" style="height: ${barHeight}px; background: ${barColor};">
+                        <div class="timeline-bar" style="height: ${barHeight}px; background: ${barBackground};">
                             <div class="bar-title">${title}</div>
                             <div class="bar-overlay" style="height: ${barHeight - nowTopPx}px;"></div>
                             ${linesHTML}
