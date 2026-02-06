@@ -18,52 +18,56 @@
         }
 
         .container {
-            max-width: 350px;
+            max-width: 140px;
             margin: 0 auto;
         }
 
         .container.width-thin {
-            max-width: 280px;
+            max-width: 120px;
         }
 
         .container.width-thinner {
-            max-width: 200px;
+            max-width: 100px;
         }
 
         .container.width-thinnest {
-            max-width: 150px;
+            max-width: 80px;
         }
 
         .controls {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .control-group {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: 4px;
+            margin-bottom: 4px;
         }
 
         label {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 600;
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             color: #333;
         }
 
         input, select, button {
             width: 100%;
-            padding: 4px;
+            padding: 2px 3px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 11px;
+            border-radius: 3px;
+            font-size: 9px;
         }
 
         input[type="color"] {
-            height: 28px;
+            height: 20px;
             cursor: pointer;
+            padding: 0;
+        }
+
+        input[type="number"] {
             padding: 2px;
         }
 
@@ -131,10 +135,10 @@
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            color: white;
+            color: #333;
             font-weight: 700;
             font-size: 12px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            text-shadow: none;
             z-index: 20;
             white-space: nowrap;
         }
@@ -186,7 +190,7 @@
         .stats {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
             margin-bottom: 10px;
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
@@ -197,13 +201,13 @@
         }
 
         .stat-value {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
             color: #333;
         }
 
         .stat-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #999;
             margin-top: 2px;
         }
@@ -236,8 +240,8 @@
                 <div>
                     <label>Size</label>
                     <select id="size">
-                        <option value="small">Small</option>
-                        <option value="medium" selected>Medium</option>
+                        <option value="small" selected>Small</option>
+                        <option value="medium">Medium</option>
                         <option value="large">Large</option>
                     </select>
                 </div>
@@ -252,7 +256,7 @@
                 </div>
                 <div>
                     <label>Bar Color</label>
-                    <input type="color" id="barColor" value="#007AFF">
+                    <input type="color" id="barColor" value="#c3f9f8">
                 </div>
                 <div>
                     <label>Line Color</label>
@@ -264,7 +268,7 @@
                 </div>
                 <div>
                     <label>Highlight Color</label>
-                    <input type="color" id="highlightColor" value="#FFD700">
+                    <input type="color" id="highlightColor" value="#FF0000">
                 </div>
                 <div style="grid-column: 1 / -1;">
                     <label>Highlight Hours (e.g., 9-11,14-16)</label>
@@ -431,9 +435,9 @@
         function formatTimeLeft(minutes) {
             const h = Math.floor(minutes / 60);
             const m = Math.round(minutes % 60);
-            if (h > 0 && m > 0) return `${h}h ${m}min`;
+            if (h > 0 && m > 0) return `${h}h ${m}`;
             if (h > 0) return `${h}h`;
-            return `${m}min`;
+            return `${m}`;
         }
 
         // Generate on load
