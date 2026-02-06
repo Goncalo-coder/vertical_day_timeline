@@ -248,8 +248,8 @@
                 <div>
                     <label>Page Width</label>
                     <select id="pageWidth">
-                        <option value="normal" selected>Normal</option>
-                        <option value="thin">Thin</option>
+                        <option value="normal">Normal</option>
+                        <option value="thin" selected>Thin</option>
                         <option value="thinner">Thinner</option>
                         <option value="thinnest">Thinnest</option>
                     </select>
@@ -272,7 +272,7 @@
                 </div>
                 <div style="grid-column: 1 / -1;">
                     <label>Highlight Hours (e.g., 9-11,14-16)</label>
-                    <input type="text" id="highlightHours" placeholder="9-11,14-16">
+                    <input type="text" id="highlightHours" placeholder="9-11,14-16" value="13-14">
                 </div>
             </div>
             <button onclick="generate()">Generate</button>
